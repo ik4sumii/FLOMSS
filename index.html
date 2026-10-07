@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Source Separation Demo</title>
+<style>
+:root {
+  --bg: #fafafa;
+  --card-bg: #fff;
+  --border: #e0e0e0;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --text: #1a1a1a;
+  --text-muted: #666;
+  --accent-vocals: #e74c3c;
+  --accent-bass: #8e44ad;
+  --accent-drums: #f39c12;
+  --accent-other: #27ae60;
+  --accent-mixture: #2c3e50;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.3rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.authors {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.paper-links {
+  text-align: center;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.paper-link {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.paper-link:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.abstract {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--text);
+  text-align: justify;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.controls-bar button {
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.controls-bar button:hover { background: #f0f0f0; }
+.controls-bar button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.controls-bar label {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Song sections */
+.song-section {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.song-header {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.song-header:hover { background: #f8f8f8; }
+.song-header .arrow { transition: transform 0.2s; }
+.song-section.open .song-header .arrow { transform: rotate(90deg); }
+
+.song-body {
+  display: none;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.song-section.open .song-body { display: block; }
+
+/* Waveform display area */
+.waveform-area {
+  margin-bottom: 1rem;
+}
+
+.waveform-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.waveform-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 70px;
+  text-align: right;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.waveform-canvas-wrapper {
+  flex: 1;
+  height: 50px;
+  background: #f4f4f4;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.waveform-canvas-wrapper canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.waveform-playhead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--primary);
+  pointer-events: none;
+  transition: left 0.05s linear;
+}
+
+/* Model table */
+.model-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.model-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--border);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.model-table td {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.model-table tr:last-child td { border-bottom: none; }
+
+.stem-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  transition: all 0.15s;
+  margin: 0 2px;
+}
+
+.stem-btn:hover { transform: scale(1.1); }
+.stem-btn.active { border-width: 3px; }
+
+.stem-btn[data-stem="vocals"] { color: var(--accent-vocals); }
+.stem-btn[data-stem="vocals"].active { background: var(--accent-vocals); color: #fff; border-color: var(--accent-vocals); }
+.stem-btn[data-stem="bass"] { color: var(--accent-bass); }
+.stem-btn[data-stem="bass"].active { background: var(--accent-bass); color: #fff; border-color: var(--accent-bass); }
+.stem-btn[data-stem="drums"] { color: var(--accent-drums); }
+.stem-btn[data-stem="drums"].active { background: var(--accent-drums); color: #fff; border-color: var(--accent-drums); }
+.stem-btn[data-stem="other"] { color: var(--accent-other); }
+.stem-btn[data-stem="other"].active { background: var(--accent-other); color: #fff; border-color: var(--accent-other); }
+
+.play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.play-btn:hover { background: var(--primary); color: #fff; }
+.play-btn.playing { background: var(--primary); color: #fff; }
+
+.ctrl-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: all 0.1s;
+  margin: 0 1px;
+}
+
+.ctrl-btn:hover { background: #f0f0f0; }
+.ctrl-btn.playing { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.stem-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+}
+
+.model-name { font-weight: 600; }
+
+/* Volume slider */
+.volume-slider {
+  width: 80px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<h1>FLOMSS: Generative Music Source Separation by Flow Matching</h1>
+<p class="authors">Anonymous Authors</p>
+<div class="paper-links">
+  <a href="#" class="paper-link">📄 arXiv</a>
+  <a href="#" class="paper-link">💻 Code</a>
+</div>
+<div class="abstract">
+  <strong>Abstract:</strong> Music source separation (MSS) has long been dominated by discriminative models that struggle to balance distortion and perceptual quality under the wide bandwidth, greater timbral diversity, and heavier spectral overlap inherent to music. Recently, flow matching has emerged as a strong generative paradigm that theoretically better models complex data distribution.
+We present a systematic study of flow matching for MSS, establishing an open-source generative framework that operates in full-band stereo format. Specifically, we investigate prediction targets, flow paths, source distribution factorization, and mixture consistency constraints, introducing mixture-consistent flow to MSS for the first time. Beyond standard Signal-to-Distortion Ratio (SDR) evaluation, we further benchmark MSS models with spectral distances and perceptual distances using multiple embeddings, providing empirical evidence of the perception–distortion tradeoff in MSS. On the MUSDB18-HQ dataset, our best model, based on a 16M-parameter NCSN++ backbone, surpasses both prior generative approaches and a predictive baseline of identical architecture on spectral and perceptual metrics, while remaining competitive with state-of-the-art methods. Our results demonstrate that flow matching is an effective paradigm for generative MSS that yields perceptually competitive separations with minimal architectural and training complexity.
+</div>
+<h2 class="section-title">🎵 Audio Demos</h2>
+<p class="subtitle">Interactive comparison of separation models on MUSDB18-HQ test set. Click on waveforms to seek. Toggle stems per model.</p>
+
+<div class="controls-bar">
+  <button id="stopAll" onclick="stopAll()">⏹ Stop All</button>
+  <label><input type="checkbox" id="syncToggle" checked> Sync Playback</label>
+  <label><input type="checkbox" id="loopToggle" checked> Loop</label>
+  <label>Volume: <input type="range" class="volume-slider" id="globalVolume" min="0" max="1" step="0.05" value="0.8" oninput="setGlobalVolume(this.value)"></label>
+</div>
+
+<div id="songContainer"></div>
+
+<script src="waveforms.js"></script>
+<script>
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const AUDIO_BASE = './audio';
+
+const SONGS = [  
+  'Angels In Amplifiers - I\'m Alright',
+  'Bobby Nobody - Stitch Up',
+  'Carlos Gonzalez - A Place For Us',
+  'Georgia Wonder - Siren',
+  'Lyndsey Ollard - Catching Up',
+  'PR - Oh No'
+];
+
+const MODELS = [
+  { id: 'gt', name: 'Ground Truth' },
+  { id: 'htdemucs', name: 'HTDemucs' },
+  { id: 'openunmix', name: 'Open-Unmix' },
+  { id: 'FLOMSS-S', name: 'FLOMSS-S' },
+  { id: 'FLOMSS-M', name: 'FLOMSS-M' },
+  { id: 'instglow', name: 'InstGlow' },
+  { id: 'sam_audio', name: 'SAM Audio' },
+  { id: 'mge_ldm', name: 'MGE-LDM' },
+  { id: 'FLOMSS-Disc.', name: 'FLOMSS-Disc.' },
+  { id: 'SCNet', name: 'SCNet' }
+];
+
+const STEMS = ['vocals', 'bass', 'drums', 'other'];
+const STEM_LABELS = { vocals: 'V', bass: 'B', drums: 'D', other: 'O' };
+const STEM_COLORS = {
+  vocals: '#e74c3c',
+  bass: '#8e44ad',
+  drums: '#f39c12',
+  other: '#27ae60',
+  mixture: '#2c3e50',
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let globalVolume = 0.8;
+const audioElements = {};
+const waveformBuffers = {}; // key → AudioBuffer (for drawing)
+const activeStems = {};     // song → Set of `model__stem`
+
+// ============================================================
+// HELPERS
+// ============================================================
+function getAudioPath(song, model, stem) {
+  const encodedSong = encodeURIComponent(song);
+  if (model === 'gt' && stem === 'mixture') return `${AUDIO_BASE}/${encodedSong}/gt/mixture.wav`;
+  return `${AUDIO_BASE}/${encodedSong}/${model}/${stem}.wav`;
+}
+
+function getAudioKey(song, model, stem) {
+  return `${song}__${model}__${stem}`;
+}
+
+function getOrCreateAudio(song, model, stem) {
+  const key = getAudioKey(song, model, stem);
+  if (!audioElements[key]) {
+    const audio = new Audio(getAudioPath(song, model, stem));
+    audio.volume = globalVolume;
+    audio.loop = document.getElementById('loopToggle').checked;
+    audio.preload = 'auto';
+    audioElements[key] = audio;
+  }
+  return audioElements[key];
+}
+
+function stopAll() {
+  Object.values(audioElements).forEach(a => { a.pause(); a.currentTime = 0; });
+  document.querySelectorAll('.play-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
+  document.querySelectorAll('.ctrl-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
+  document.querySelectorAll('.stem-btn.active').forEach(b => b.classList.remove('active'));
+  // Remove dynamic waveform rows
+  document.querySelectorAll('.waveform-row.stem-row').forEach(el => el.remove());
+  Object.keys(activeStems).forEach(k => activeStems[k] = new Set());
+}
+
+function setGlobalVolume(v) {
+  globalVolume = parseFloat(v);
+  Object.values(audioElements).forEach(a => a.volume = globalVolume);
+}
+
+// ============================================================
+// WAVEFORM DRAWING
+// ============================================================
+function drawWaveform(canvas, audioBuffer, color) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (!audioBuffer) {
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#bbb';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Loading...', w/2, h/2 + 4);
+    return;
+  }
+
+  const data = audioBuffer.getChannelData(0);
+  const step = Math.ceil(data.length / w);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.75;
+
+  for (let i = 0; i < w; i++) {
+    const start = i * step;
+    let min = 1, max = -1;
+    for (let j = 0; j < step; j++) {
+      const val = data[start + j] || 0;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const yLow = ((1 + min) / 2) * h;
+    const yHigh = ((1 + max) / 2) * h;
+    ctx.fillRect(i, yHigh, 1, Math.max(1, yLow - yHigh));
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+async function loadAndDrawWaveform(canvas, audioPath, color, song, model, stem) {
+  // Build key to match waveforms.js format: "song/model/stem.wav"
+  const key = `${song}/${model}/${stem}.wav`;
+
+  if (typeof WAVEFORM_DATA !== 'undefined' && WAVEFORM_DATA[key]) {
+    drawWaveformFromPeaks(canvas, WAVEFORM_DATA[key], color);
+  } else {
+    // Fallback: try fetch (works with HTTP server)
+    try {
+      const response = await fetch(audioPath);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      drawWaveform(canvas, audioBuffer, color);
+      canvas.dataset.duration = audioBuffer.duration;
+      waveformBuffers[audioPath] = audioBuffer;
+      await audioCtx.close();
+    } catch (e) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f8f8f8';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#aaa';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No waveform data', canvas.width/2, canvas.height/2 + 4);
+    }
+  }
+}
+
+function drawWaveformFromPeaks(canvas, peaks, color) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.75;
+
+  for (let i = 0; i < peaks.length && i < w; i++) {
+    const [min, max] = peaks[i];
+    const yHigh = ((1 - max) / 2) * h;
+    const yLow = ((1 - min) / 2) * h;
+    ctx.fillRect(i, yHigh, 1, Math.max(1, yLow - yHigh));
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+// ============================================================
+// PLAYHEAD ANIMATION
+// ============================================================
+function updatePlayheads() {
+  document.querySelectorAll('.waveform-canvas-wrapper[data-key]').forEach(wrapper => {
+    const key = wrapper.dataset.key;
+    const audio = audioElements[key];
+    const playhead = wrapper.querySelector('.waveform-playhead');
+    if (audio && audio.duration && !audio.paused) {
+      const pct = (audio.currentTime / audio.duration) * 100;
+      playhead.style.left = pct + '%';
+    }
+  });
+  requestAnimationFrame(updatePlayheads);
+}
+requestAnimationFrame(updatePlayheads);
+
+// ============================================================
+// SEEK (click anywhere on waveform)
+// ============================================================
+function seekFromClick(e, song, model, stem) {
+  const wrapper = e.currentTarget;
+  const rect = wrapper.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+
+  const key = getAudioKey(song, model, stem);
+  const audio = getOrCreateAudio(song, model, stem);
+  if (audio.duration) {
+    audio.currentTime = pct * audio.duration;
+    if (audio.paused) {
+      audio.loop = document.getElementById('loopToggle').checked;
+      audio.volume = globalVolume;
+      audio.play();
+      // Update play button state
+      const btn = document.querySelector(`[data-play-key="${key}"]`);
+      if (btn) { btn.classList.add('playing'); btn.textContent = '⏸'; }
+    }
+  }
+
+  // Sync all active audios for this song
+  if (document.getElementById('syncToggle').checked) {
+    Object.keys(audioElements).forEach(k => {
+      if (k.startsWith(song + '__') && k !== key) {
+        const a = audioElements[k];
+        if (a && a.duration && !a.paused) {
+          a.currentTime = pct * a.duration;
+        }
+      }
+    });
+  }
+}
+
+// ============================================================
+// PLAY / PAUSE / RESTART controls per stem
+// ============================================================
+function playStem(song, model, stem) {
+  const key = getAudioKey(song, model, stem);
+  const audio = getOrCreateAudio(song, model, stem);
+  const syncEnabled = document.getElementById('syncToggle').checked;
+
+  if (audio.paused) {
+    // Sync with mixture or any playing audio
+    if (syncEnabled) {
+      const mixKey = getAudioKey(song, 'gt', 'mixture');
+      const mixAudio = audioElements[mixKey];
+      if (mixAudio && !mixAudio.paused && mixAudio.duration) {
+        audio.currentTime = mixAudio.currentTime;
+      }
+    }
+    audio.loop = document.getElementById('loopToggle').checked;
+    audio.volume = globalVolume;
+    audio.play();
+  } else {
+    audio.pause();
+  }
+  updateCtrlBtnState(key);
+}
+
+function restartStem(song, model, stem) {
+  const key = getAudioKey(song, model, stem);
+  const audio = getOrCreateAudio(song, model, stem);
+  audio.currentTime = 0;
+  audio.loop = document.getElementById('loopToggle').checked;
+  audio.volume = globalVolume;
+  audio.play();
+  updateCtrlBtnState(key);
+}
+
+function stopStem(song, model, stem) {
+  const key = getAudioKey(song, model, stem);
+  const audio = audioElements[key];
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+  updateCtrlBtnState(key);
+  // Reset playhead
+  const wrapper = document.querySelector(`.waveform-canvas-wrapper[data-key="${key}"]`);
+  if (wrapper) wrapper.querySelector('.waveform-playhead').style.left = '0%';
+}
+
+function playAllStems(song) {
+  const loopEnabled = document.getElementById('loopToggle').checked;
+  // Play mixture
+  const mixKey = getAudioKey(song, 'gt', 'mixture');
+  const mixAudio = getOrCreateAudio(song, 'gt', 'mixture');
+  mixAudio.loop = loopEnabled;
+  mixAudio.volume = globalVolume;
+  mixAudio.currentTime = 0;
+  mixAudio.play();
+  const mixBtn = document.querySelector(`[data-play-key="${mixKey}"]`);
+  if (mixBtn) { mixBtn.classList.add('playing'); mixBtn.textContent = '⏸'; }
+
+  // Play all active stems for this song
+  if (activeStems[song]) {
+    activeStems[song].forEach(stemKey => {
+      const [model, stem] = stemKey.split('__');
+      const key = getAudioKey(song, model, stem);
+      const audio = getOrCreateAudio(song, model, stem);
+      audio.loop = loopEnabled;
+      audio.volume = globalVolume;
+      audio.currentTime = 0;
+      audio.play();
+      updateCtrlBtnState(key);
+    });
+  }
+}
+
+function stopAllStems(song) {
+  // Stop mixture
+  const mixKey = getAudioKey(song, 'gt', 'mixture');
+  const mixAudio = audioElements[mixKey];
+  if (mixAudio) { mixAudio.pause(); mixAudio.currentTime = 0; }
+  const mixBtn = document.querySelector(`[data-play-key="${mixKey}"]`);
+  if (mixBtn) { mixBtn.classList.remove('playing'); mixBtn.textContent = '▶'; }
+  const mixWrapper = document.querySelector(`.waveform-canvas-wrapper[data-key="${mixKey}"]`);
+  if (mixWrapper) mixWrapper.querySelector('.waveform-playhead').style.left = '0%';
+
+  // Stop all active stems
+  if (activeStems[song]) {
+    activeStems[song].forEach(stemKey => {
+      const [model, stem] = stemKey.split('__');
+      const key = getAudioKey(song, model, stem);
+      const audio = audioElements[key];
+      if (audio) { audio.pause(); audio.currentTime = 0; }
+      updateCtrlBtnState(key);
+      const wrapper = document.querySelector(`.waveform-canvas-wrapper[data-key="${key}"]`);
+      if (wrapper) wrapper.querySelector('.waveform-playhead').style.left = '0%';
+    });
+  }
+}
+
+function updateCtrlBtnState(key) {
+  const audio = audioElements[key];
+  const btn = document.querySelector(`[data-play-key="${key}"]`);
+  if (btn) {
+    if (audio && !audio.paused) {
+      btn.classList.add('playing');
+      btn.textContent = '⏸';
+    } else {
+      btn.classList.remove('playing');
+      btn.textContent = '▶';
+    }
+  }
+}
+
+// ============================================================
+// TOGGLE STEM (add/remove from display)
+// ============================================================
+function toggleStem(song, model, stem, btn) {
+  const stemKey = `${model}__${stem}`;
+  if (!activeStems[song]) activeStems[song] = new Set();
+
+  if (activeStems[song].has(stemKey)) {
+    // Remove
+    activeStems[song].delete(stemKey);
+    btn.classList.remove('active');
+    const audio = audioElements[getAudioKey(song, model, stem)];
+    if (audio) audio.pause();
+    removeStemWaveform(song, model, stem);
+  } else {
+    // Add
+    activeStems[song].add(stemKey);
+    btn.classList.add('active');
+    addStemWaveform(song, model, stem);
+    // Auto-play with sync
+    playStem(song, model, stem);
+  }
+}
+
+// ============================================================
+// DYNAMIC WAVEFORM ROWS
+// ============================================================
+function addStemWaveform(song, model, stem) {
+  const container = document.querySelector(`.waveform-area[data-song="${song}"]`);
+  if (!container) return;
+
+  const rowId = `wr_${song}_${model}_${stem}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  if (document.getElementById(rowId)) return;
+
+  const key = getAudioKey(song, model, stem);
+  const modelObj = MODELS.find(m => m.id === model);
+  const displayName = modelObj ? modelObj.name : model;
+  const color = STEM_COLORS[stem] || '#666';
+
+  const row = document.createElement('div');
+  row.className = 'waveform-row stem-row';
+  row.id = rowId;
+
+  // Label
+  const label = document.createElement('div');
+  label.className = 'waveform-label';
+  label.style.color = color;
+  label.innerHTML = `<span style="font-size:0.65rem">${displayName}</span><br>${stem}`;
+
+  // Waveform
+  const wrapper = document.createElement('div');
+  wrapper.className = 'waveform-canvas-wrapper';
+  wrapper.dataset.key = key;
+  wrapper.dataset.song = song;
+  wrapper.dataset.model = model;
+  wrapper.dataset.stem = stem;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 50;
+  const playhead = document.createElement('div');
+  playhead.className = 'waveform-playhead';
+
+  wrapper.appendChild(canvas);
+  wrapper.appendChild(playhead);
+  wrapper.addEventListener('click', (e) => seekFromClick(e, song, model, stem));
+
+  // Controls: play/pause, restart
+  const controls = document.createElement('div');
+  controls.className = 'stem-controls';
+
+  const playBtn = document.createElement('button');
+  playBtn.className = 'ctrl-btn';
+  playBtn.dataset.playKey = key;
+  playBtn.textContent = '▶';
+  playBtn.title = 'Play / Pause';
+  playBtn.onclick = (e) => { e.stopPropagation(); playStem(song, model, stem); };
+
+  const restartBtn = document.createElement('button');
+  restartBtn.className = 'ctrl-btn';
+  restartBtn.textContent = '⏮';
+  restartBtn.title = 'Restart from beginning';
+  restartBtn.onclick = (e) => { e.stopPropagation(); restartStem(song, model, stem); };
+
+  const stopBtn = document.createElement('button');
+  stopBtn.className = 'ctrl-btn';
+  stopBtn.textContent = '⏹';
+  stopBtn.title = 'Stop';
+  stopBtn.onclick = (e) => { e.stopPropagation(); stopStem(song, model, stem); };
+
+  controls.appendChild(playBtn);
+  controls.appendChild(restartBtn);
+  controls.appendChild(stopBtn);
+
+  row.appendChild(label);
+  row.appendChild(wrapper);
+  row.appendChild(controls);
+  container.appendChild(row);
+
+  loadAndDrawWaveform(canvas, getAudioPath(song, model, stem), color, song, model, stem);
+}
+
+function removeStemWaveform(song, model, stem) {
+  const rowId = `wr_${song}_${model}_${stem}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  const el = document.getElementById(rowId);
+  if (el) el.remove();
+}
+
+// ============================================================
+// PLAY MIXTURE
+// ============================================================
+function playMixture(song, btn) {
+  const key = getAudioKey(song, 'gt', 'mixture');
+  const audio = getOrCreateAudio(song, 'gt', 'mixture');
+  if (audio.paused) {
+    audio.loop = document.getElementById('loopToggle').checked;
+    audio.volume = globalVolume;
+    audio.play();
+    btn.classList.add('playing');
+    btn.textContent = '⏸';
+  } else {
+    audio.pause();
+    btn.classList.remove('playing');
+    btn.textContent = '▶';
+  }
+}
+
+// ============================================================
+// BUILD UI
+// ============================================================
+function buildPage() {
+  const container = document.getElementById('songContainer');
+
+  SONGS.forEach((song, idx) => {
+    const section = document.createElement('div');
+    section.className = 'song-section' + (idx === 0 ? ' open' : '');
+
+    const header = document.createElement('div');
+    header.className = 'song-header';
+    header.innerHTML = `<span class="arrow">▶</span> ${song}`;
+    header.onclick = () => section.classList.toggle('open');
+
+    const body = document.createElement('div');
+    body.className = 'song-body';
+
+    // Waveform area
+    const waveArea = document.createElement('div');
+    waveArea.className = 'waveform-area';
+    waveArea.dataset.song = song;
+
+    // Mixture row
+    const mixKey = getAudioKey(song, 'gt', 'mixture');
+    const mixRow = document.createElement('div');
+    mixRow.className = 'waveform-row';
+    mixRow.innerHTML = `
+      <div class="waveform-label" style="color:${STEM_COLORS.mixture}">MIXTURE</div>
+      <div class="waveform-canvas-wrapper" data-key="${mixKey}" data-song="${song}" data-model="gt" data-stem="mixture">
+        <canvas width="800" height="50"></canvas>
+        <div class="waveform-playhead"></div>
+      </div>
+      <div class="stem-controls">
+        <button class="ctrl-btn" data-play-key="${mixKey}" onclick="playMixture('${song.replace(/'/g, "\\'")}', this)" title="Play / Pause">▶</button>
+        <button class="ctrl-btn" onclick="restartStem('${song.replace(/'/g, "\\'")}', 'gt', 'mixture')" title="Restart">⏮</button>
+        <button class="ctrl-btn" onclick="stopStem('${song.replace(/'/g, "\\'")}', 'gt', 'mixture')" title="Stop">⏹</button>
+      </div>
+    `;
+    waveArea.appendChild(mixRow);
+
+    const mixWrapper = mixRow.querySelector('.waveform-canvas-wrapper');
+    mixWrapper.addEventListener('click', (e) => seekFromClick(e, song, 'gt', 'mixture'));
+    const mixCanvas = mixRow.querySelector('canvas');
+    loadAndDrawWaveform(mixCanvas, getAudioPath(song, 'gt', 'mixture'), STEM_COLORS.mixture, song, 'gt', 'mixture');
+
+    // Play All / Stop All controls for this song
+    const songControls = document.createElement('div');
+    songControls.style.cssText = 'margin: 0.5rem 0 0.75rem 0; display:flex; gap:0.5rem;';
+    const playAllBtn = document.createElement('button');
+    playAllBtn.className = 'ctrl-btn';
+    playAllBtn.style.cssText = 'width:auto; padding:0.25rem 0.6rem; font-size:0.75rem; border-radius:4px;';
+    playAllBtn.textContent = '▶ Play All';
+    playAllBtn.title = 'Play mixture + all active stems from beginning';
+    playAllBtn.onclick = () => playAllStems(song);
+    const stopAllBtn = document.createElement('button');
+    stopAllBtn.className = 'ctrl-btn';
+    stopAllBtn.style.cssText = 'width:auto; padding:0.25rem 0.6rem; font-size:0.75rem; border-radius:4px;';
+    stopAllBtn.textContent = '⏹ Stop All';
+    stopAllBtn.title = 'Stop all audio for this song';
+    stopAllBtn.onclick = () => stopAllStems(song);
+    songControls.appendChild(playAllBtn);
+    songControls.appendChild(stopAllBtn);
+    body.appendChild(waveArea);
+    body.appendChild(songControls);
+
+    // Model table
+    const table = document.createElement('table');
+    table.className = 'model-table';
+    table.innerHTML = `<thead><tr><th>Model</th><th>Toggle Stems (click to add/remove)</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
+
+    MODELS.forEach(model => {
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.className = 'model-name';
+      tdName.textContent = model.name;
+
+      const tdStems = document.createElement('td');
+      STEMS.forEach(stem => {
+        const btn = document.createElement('button');
+        btn.className = 'stem-btn';
+        btn.dataset.stem = stem;
+        btn.textContent = STEM_LABELS[stem];
+        btn.title = `${model.name} — ${stem}`;
+        btn.onclick = () => toggleStem(song, model.id, stem, btn);
+        tdStems.appendChild(btn);
+      });
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdStems);
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    body.appendChild(table);
+
+    section.appendChild(header);
+    section.appendChild(body);
+    container.appendChild(section);
+  });
+}
+
+buildPage();
+</script>
+</body>
+</html>
