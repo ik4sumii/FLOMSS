@@ -3,914 +3,865 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Music Source Separation Demo</title>
+<meta name="description" content="FLOMSS interactive music source separation listening comparison.">
+<title>FLOMSS — Interactive Audio Comparison</title>
 <style>
 :root {
-  --bg: #fafafa;
-  --card-bg: #fff;
-  --border: #e0e0e0;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --text: #1a1a1a;
-  --text-muted: #666;
-  --accent-vocals: #e74c3c;
-  --accent-bass: #8e44ad;
-  --accent-drums: #f39c12;
-  --accent-other: #27ae60;
-  --accent-mixture: #2c3e50;
+  --canvas: #f3f5f8;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --ink: #101828;
+  --ink-soft: #475467;
+  --muted: #667085;
+  --line: #e4e7ec;
+  --line-strong: #d0d5dd;
+  --brand: #3157d5;
+  --brand-dark: #243fa5;
+  --brand-soft: #eef2ff;
+  --navy: #172554;
+  --vocals: #d92d62;
+  --bass: #7f56d9;
+  --drums: #e07912;
+  --other: #079455;
+  --mixture: #344054;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .05);
+  --shadow-lg: 0 18px 45px rgba(16, 24, 40, .09);
+  --radius: 14px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  margin: 0;
+  color: var(--ink);
+  background: radial-gradient(circle at 15% -10%, rgba(49, 87, 213, .09), transparent 30rem), var(--canvas);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
-
-h1 {
-  font-size: 1.75rem;
-  margin-bottom: 0.3rem;
-  text-align: center;
-  font-weight: 700;
+button, select, input { font: inherit; }
+button, select, input[type="range"] { accent-color: var(--brand); }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 3px solid rgba(49, 87, 213, .25);
+  outline-offset: 2px;
 }
+.page-shell { width: min(1420px, calc(100% - 40px)); margin: 0 auto; }
 
-.authors {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 0.75rem;
-  font-style: italic;
-}
-
-.paper-links {
-  text-align: center;
-  margin-bottom: 1.25rem;
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.paper-link {
-  display: inline-block;
-  padding: 0.4rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card-bg);
-  color: var(--primary);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.15s;
-}
-
-.paper-link:hover {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-}
-
-.abstract {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  line-height: 1.7;
-  color: var(--text);
-  text-align: justify;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  margin-bottom: 0.25rem;
-  font-weight: 700;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  margin-bottom: 2rem;
-  font-size: 0.95rem;
-}
-
-.controls-bar {
-  display: flex;
+.hero { padding: 52px 0 28px; }
+.eyebrow {
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0.75rem 1rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.controls-bar button {
-  padding: 0.4rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.15s;
-}
-
-.controls-bar button:hover { background: #f0f0f0; }
-.controls-bar button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-.controls-bar label {
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-/* Song sections */
-.song-section {
-  margin-bottom: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--card-bg);
-  overflow: hidden;
-}
-
-.song-header {
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  user-select: none;
-  transition: background 0.15s;
-}
-
-.song-header:hover { background: #f8f8f8; }
-.song-header .arrow { transition: transform 0.2s; }
-.song-section.open .song-header .arrow { transform: rotate(90deg); }
-
-.song-body {
-  display: none;
-  padding: 1rem;
-  border-top: 1px solid var(--border);
-}
-
-.song-section.open .song-body { display: block; }
-
-/* Waveform display area */
-.waveform-area {
-  margin-bottom: 1rem;
-}
-
-.waveform-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.waveform-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  width: 70px;
-  text-align: right;
-  flex-shrink: 0;
+  gap: 8px;
+  margin-bottom: 13px;
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .11em;
   text-transform: uppercase;
 }
+.eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--brand); }
+.hero h1 {
+  max-width: 960px;
+  margin: 0;
+  color: var(--navy);
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+.hero-copy { max-width: 800px; margin: 18px 0 0; color: var(--ink-soft); font-size: 17px; }
+.hero-actions { display: flex; align-items: center; gap: 12px; margin-top: 24px; }
+.hero-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 15px;
+  color: var(--ink);
+  background: rgba(255,255,255,.72);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+.hero-link:hover { color: var(--brand); border-color: #aab7e8; background: #fff; }
+.abstract { max-width: 980px; margin-top: 24px; color: var(--ink-soft); font-size: 14px; }
+.abstract summary { width: fit-content; color: var(--brand-dark); cursor: pointer; font-weight: 700; }
+.abstract p { margin: 12px 0 0; }
 
-.waveform-canvas-wrapper {
-  flex: 1;
-  height: 50px;
-  background: #f4f4f4;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
+.demo-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 28px 0 16px;
+}
+.demo-heading h2 { margin: 0; color: var(--navy); font-size: 25px; letter-spacing: -.02em; }
+.demo-heading p { margin: 5px 0 0; color: var(--muted); }
+.mode-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.mode-note i { width: 8px; height: 8px; border-radius: 50%; background: #17b26a; box-shadow: 0 0 0 4px #dcfae6; }
+
+.control-dock {
+  position: sticky;
+  top: 10px;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: minmax(300px, 1.2fr) auto minmax(350px, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(208,213,221,.9);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 32px rgba(16,24,40,.11);
+  backdrop-filter: blur(14px);
+}
+.control-group { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.control-group.settings { justify-content: flex-end; }
+.field-label { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.track-field { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 9px; flex: 1; }
+.track-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 34px 0 11px;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+}
+.icon-button, .transport-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  color: var(--ink-soft);
+  background: #fff;
+  cursor: pointer;
+  transition: transform .14s ease, background .14s ease, color .14s ease, border-color .14s ease;
+}
+.icon-button { width: 38px; }
+.icon-button:hover, .transport-button:hover { color: var(--brand); border-color: #aab7e8; background: var(--brand-soft); }
+.icon-button:active, .transport-button:active { transform: translateY(1px); }
+.transport-button.primary { width: 42px; height: 42px; color: #fff; background: var(--brand); border-color: var(--brand); }
+.transport-button.primary:hover { color: #fff; background: var(--brand-dark); }
+.transport-button svg, .icon-button svg { width: 16px; height: 16px; fill: currentColor; }
+.timecode { min-width: 101px; color: var(--ink-soft); font: 650 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.divider { width: 1px; height: 27px; margin: 0 2px; background: var(--line); }
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
   cursor: pointer;
 }
+.toggle input { width: 15px; height: 15px; margin: 0; }
+.volume-control { display: flex; align-items: center; gap: 7px; min-width: 128px; }
+.volume-control input { width: 82px; }
+.volume-value { width: 31px; color: var(--muted); font: 600 11px ui-monospace, monospace; }
 
-.waveform-canvas-wrapper canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
+.workspace {
+  margin: 18px 0 54px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
 }
-
+.workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 22px;
+  background: linear-gradient(110deg, #101b42, #263e85);
+  color: #fff;
+}
+.workspace-kicker { margin-bottom: 3px; color: #b8c6ff; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.workspace-title { margin: 0; font-size: 20px; letter-spacing: -.015em; }
+.workspace-meta { color: #d6ddf8; font-size: 12px; }
+.selected-counter {
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+  font-size: 11px;
+  font-weight: 750;
+}
+.audition-panel { padding: 18px 20px 12px; background: #fbfcfe; border-bottom: 1px solid var(--line); }
+.panel-topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+.panel-label { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.panel-hint { color: var(--muted); font-size: 11px; }
+.waveform-stack { display: grid; gap: 8px; }
+.empty-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 45px;
+  color: var(--muted);
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+  background: #fff;
+  font-size: 12px;
+}
+.waveform-row { display: grid; grid-template-columns: 174px minmax(160px,1fr) 82px; align-items: center; gap: 12px; }
+.waveform-identity { min-width: 0; }
+.waveform-name { overflow: hidden; color: var(--ink); font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.waveform-detail { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.stem-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--stem-color, var(--mixture)); }
+.waveform-canvas-wrapper {
+  position: relative;
+  height: 52px;
+  overflow: hidden;
+  cursor: crosshair;
+  background: #edf1f6;
+  border: 1px solid #e2e7ee;
+  border-radius: 8px;
+}
+.waveform-canvas-wrapper::after { content: ""; position: absolute; inset: 50% 0 auto; height: 1px; background: rgba(71,84,103,.11); pointer-events: none; }
+.waveform-canvas-wrapper:hover { border-color: #b9c4e8; }
+.waveform-canvas-wrapper canvas { display: block; width: 100%; height: 100%; }
 .waveform-playhead {
   position: absolute;
+  z-index: 3;
   top: 0;
+  bottom: 0;
   left: 0;
   width: 2px;
-  height: 100%;
-  background: var(--primary);
+  background: var(--brand);
   pointer-events: none;
-  transition: left 0.05s linear;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.55);
 }
-
-/* Model table */
-.model-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
+.waveform-playhead::before { content: ""; position: absolute; top: 0; left: -3px; border: 4px solid transparent; border-top-color: var(--brand); }
+.row-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.mini-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  cursor: pointer;
 }
+.mini-button:hover, .mini-button.playing { color: #fff; background: var(--brand); border-color: var(--brand); }
+.mini-button.remove:hover { color: #b42318; background: #fef3f2; border-color: #fecdca; }
 
+.comparison-panel { padding: 18px 20px 22px; }
+.comparison-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.comparison-toolbar h3 { margin: 0; font-size: 15px; }
+.comparison-toolbar p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
+.stem-legend { display: flex; gap: 7px; flex-wrap: wrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 650; }
+.model-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
 .model-table th {
-  text-align: left;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 2px solid var(--border);
-  font-size: 0.75rem;
+  padding: 9px 10px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-align: center;
   text-transform: uppercase;
-  color: var(--text-muted);
 }
-
-.model-table td {
-  padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-
-.model-table tr:last-child td { border-bottom: none; }
-
-.stem-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  background: #fff;
+.model-table th:first-child { width: 29%; border-left: 1px solid var(--line); border-radius: 9px 0 0 0; text-align: left; }
+.model-table th:nth-child(2) { width: 15%; text-align: left; }
+.model-table th:last-child { border-right: 1px solid var(--line); border-radius: 0 9px 0 0; }
+.model-table td { height: 53px; padding: 7px 10px; border-bottom: 1px solid var(--line); transition: background .14s ease; }
+.model-table tbody tr:hover td { background: #fafbff; }
+.model-table tbody tr.active-row td { background: #f7f8ff; }
+.model-table tbody tr.featured td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+.model-table td:not(:first-child):not(:nth-child(2)) { text-align: center; }
+.model-name { display: flex; align-items: center; gap: 8px; font-weight: 750; }
+.ours-badge { padding: 2px 6px; color: var(--brand-dark); background: var(--brand-soft); border-radius: 5px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.family-tag { display: inline-flex; padding: 3px 7px; color: var(--muted); background: #f2f4f7; border-radius: 999px; font-size: 9px; font-weight: 750; }
+.family-tag.reference { color: #175cd3; background: #eff8ff; }
+.family-tag.generative { color: #6941c6; background: #f4f3ff; }
+.stem-button {
+  width: min(100%, 100px);
+  min-height: 34px;
+  padding: 0 7px;
+  color: var(--stem-color);
+  background: var(--stem-soft);
+  border: 1px solid color-mix(in srgb, var(--stem-color) 23%, white);
+  border-radius: 8px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  transition: all 0.15s;
-  margin: 0 2px;
+  font-size: 11px;
+  font-weight: 750;
+  transition: transform .12s ease, box-shadow .12s ease, color .12s ease, background .12s ease;
 }
-
-.stem-btn:hover { transform: scale(1.1); }
-.stem-btn.active { border-width: 3px; }
-
-.stem-btn[data-stem="vocals"] { color: var(--accent-vocals); }
-.stem-btn[data-stem="vocals"].active { background: var(--accent-vocals); color: #fff; border-color: var(--accent-vocals); }
-.stem-btn[data-stem="bass"] { color: var(--accent-bass); }
-.stem-btn[data-stem="bass"].active { background: var(--accent-bass); color: #fff; border-color: var(--accent-bass); }
-.stem-btn[data-stem="drums"] { color: var(--accent-drums); }
-.stem-btn[data-stem="drums"].active { background: var(--accent-drums); color: #fff; border-color: var(--accent-drums); }
-.stem-btn[data-stem="other"] { color: var(--accent-other); }
-.stem-btn[data-stem="other"].active { background: var(--accent-other); color: #fff; border-color: var(--accent-other); }
-
-.play-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid var(--primary);
-  background: #fff;
-  color: var(--primary);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  transition: all 0.15s;
-  flex-shrink: 0;
+.stem-button:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(16,24,40,.09); }
+.stem-button.active { color: #fff; background: var(--stem-color); border-color: var(--stem-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--stem-color) 16%, transparent); }
+.stem-button:disabled { color: #98a2b3; background: #f2f4f7; border-color: #eaecf0; cursor: not-allowed; opacity: .65; transform: none; box-shadow: none; }
+.keyboard-help { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; padding: 14px 20px; color: var(--muted); background: var(--surface-soft); border-top: 1px solid var(--line); font-size: 10px; }
+kbd { padding: 2px 6px; color: var(--ink-soft); background: #fff; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 5px; font: 650 10px ui-monospace, monospace; }
+.status-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 100;
+  max-width: 340px;
+  padding: 10px 13px;
+  color: #fff;
+  background: #1d2939;
+  border-radius: 9px;
+  box-shadow: var(--shadow-lg);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity .18s, transform .18s;
 }
+.status-toast.show { opacity: 1; transform: translateY(0); }
 
-.play-btn:hover { background: var(--primary); color: #fff; }
-.play-btn.playing { background: var(--primary); color: #fff; }
-
-.ctrl-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  transition: all 0.1s;
-  margin: 0 1px;
+@media (max-width: 1040px) {
+  .control-dock { grid-template-columns: 1fr auto; }
+  .control-group.settings { grid-column: 1 / -1; justify-content: flex-start; padding-top: 8px; border-top: 1px solid var(--line); }
+  .waveform-row { grid-template-columns: 145px minmax(140px,1fr) 78px; }
 }
-
-.ctrl-btn:hover { background: #f0f0f0; }
-.ctrl-btn.playing { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-.stem-controls {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-left: 8px;
-}
-
-.model-name { font-weight: 600; }
-
-/* Volume slider */
-.volume-slider {
-  width: 80px;
-  cursor: pointer;
+@media (max-width: 760px) {
+  .page-shell { width: min(100% - 20px, 1420px); }
+  .hero { padding-top: 30px; }
+  .demo-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .control-dock { position: static; grid-template-columns: 1fr; }
+  .control-group.transport, .control-group.settings { grid-column: auto; justify-content: flex-start; }
+  .control-group.settings { overflow-x: auto; }
+  .waveform-row { grid-template-columns: 1fr 72px; }
+  .waveform-identity { grid-column: 1 / -1; }
+  .comparison-panel { padding: 15px 10px 18px; overflow-x: auto; }
+  .comparison-toolbar { align-items: flex-start; flex-direction: column; }
+  .model-table { min-width: 720px; }
+  .workspace-header { align-items: flex-start; flex-direction: column; }
 }
 </style>
 </head>
 <body>
+<header class="hero page-shell">
+  <div class="eyebrow">Full-band stereo source separation</div>
+  <h1>FLOMSS: Generative Music Source Separation by Flow Matching</h1>
+  <p class="hero-copy">A controlled listening interface for comparing separation quality across generative and discriminative systems on MUSDB18-HQ.</p>
+  <div class="hero-actions">
+    <a class="hero-link" href="https://github.com/ik4sumii/FLOMSS" target="_blank" rel="noreferrer">Code repository ↗</a>
+  </div>
+  <details class="abstract">
+    <summary>Read abstract</summary>
+    <p>We present a systematic study of flow matching for music source separation in full-band stereo. The study investigates prediction targets, flow paths, source distribution factorization, and mixture consistency, and evaluates the perception–distortion tradeoff using signal, spectral, and multi-embedding perceptual metrics.</p>
+  </details>
+</header>
 
-<h1>FLOMSS: Generative Music Source Separation by Flow Matching</h1>
-<p class="authors">Anonymous Authors</p>
-<div class="paper-links">
-  <a href="#" class="paper-link">📄 arXiv</a>
-  <a href="#" class="paper-link">💻 Code</a>
-</div>
-<div class="abstract">
-  <strong>Abstract:</strong> Music source separation (MSS) has long been dominated by discriminative models that struggle to balance distortion and perceptual quality under the wide bandwidth, greater timbral diversity, and heavier spectral overlap inherent to music. Recently, flow matching has emerged as a strong generative paradigm that theoretically better models complex data distribution.
-We present a systematic study of flow matching for MSS, establishing an open-source generative framework that operates in full-band stereo format. Specifically, we investigate prediction targets, flow paths, source distribution factorization, and mixture consistency constraints, introducing mixture-consistent flow to MSS for the first time. Beyond standard Signal-to-Distortion Ratio (SDR) evaluation, we further benchmark MSS models with spectral distances and perceptual distances using multiple embeddings, providing empirical evidence of the perception–distortion tradeoff in MSS. On the MUSDB18-HQ dataset, our best model, based on a 16M-parameter NCSN++ backbone, surpasses both prior generative approaches and a predictive baseline of identical architecture on spectral and perceptual metrics, while remaining competitive with state-of-the-art methods. Our results demonstrate that flow matching is an effective paradigm for generative MSS that yields perceptually competitive separations with minimal architectural and training complexity.
-</div>
-<h2 class="section-title">🎵 Audio Demos</h2>
-<p class="subtitle">Interactive comparison of separation models on MUSDB18-HQ test set. Click on waveforms to seek. Toggle stems per model.</p>
+<main class="page-shell">
+  <div class="demo-heading">
+    <div>
+      <h2>Interactive listening comparison</h2>
+      <p>Choose a source, then switch systems at the same timestamp for a time-aligned A/B workflow.</p>
+    </div>
+    <div class="mode-note"><i></i> 48 kHz · stereo · synchronized transport</div>
+  </div>
 
-<div class="controls-bar">
-  <button id="stopAll" onclick="stopAll()">⏹ Stop All</button>
-  <label><input type="checkbox" id="syncToggle" checked> Sync Playback</label>
-  <label><input type="checkbox" id="loopToggle" checked> Loop</label>
-  <label>Volume: <input type="range" class="volume-slider" id="globalVolume" min="0" max="1" step="0.05" value="0.8" oninput="setGlobalVolume(this.value)"></label>
-</div>
+  <section class="control-dock" aria-label="Playback controls">
+    <div class="control-group">
+      <button class="icon-button" id="previousTrack" aria-label="Previous track" title="Previous track"><svg viewBox="0 0 24 24"><path d="M7 6h2v12H7V6Zm3.5 6 8.5 6V6l-8.5 6Z"/></svg></button>
+      <div class="track-field"><label class="field-label" for="trackSelect">Track</label><select class="track-select" id="trackSelect"></select></div>
+      <button class="icon-button" id="nextTrack" aria-label="Next track" title="Next track"><svg viewBox="0 0 24 24"><path d="M15 6h2v12h-2V6ZM5 6v12l8.5-6L5 6Z"/></svg></button>
+    </div>
+    <div class="control-group transport">
+      <button class="icon-button" id="restartButton" aria-label="Restart" title="Restart"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6V6Zm3.5 6 8.5 6V6l-8.5 6Z"/></svg></button>
+      <button class="transport-button primary" id="playButton" aria-label="Play" title="Play / pause (Space)"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z"/></svg></button>
+      <button class="icon-button" id="stopButton" aria-label="Stop" title="Stop"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></button>
+      <span class="timecode" id="timecode">00:00 / 00:00</span>
+    </div>
+    <div class="control-group settings">
+      <label class="toggle" title="Keep all selected signals at the same timestamp"><input type="checkbox" id="syncToggle" checked> Sync</label>
+      <label class="toggle"><input type="checkbox" id="loopToggle" checked> Loop</label>
+      <label class="toggle" title="Switching a model replaces the previous selection"><input type="checkbox" id="soloToggle" checked> A/B switch</label>
+      <div class="divider"></div>
+      <label class="volume-control" for="globalVolume"><span class="field-label">Level</span><input type="range" id="globalVolume" min="0" max="1" step="0.02" value="0.8"><span class="volume-value" id="volumeValue">80%</span></label>
+    </div>
+  </section>
+  <div id="songContainer"></div>
+</main>
 
-<div id="songContainer"></div>
-
+<div class="status-toast" id="statusToast" role="status" aria-live="polite"></div>
 <script src="waveforms.js"></script>
 <script>
-// ============================================================
-// CONFIGURATION
-// ============================================================
 const AUDIO_BASE = './audio';
-
-const SONGS = [  
-  'Angels In Amplifiers - I\'m Alright',
+const SONGS = [
+  "Angels In Amplifiers - I'm Alright",
   'Bobby Nobody - Stitch Up',
   'Carlos Gonzalez - A Place For Us',
   'Georgia Wonder - Siren',
   'Lyndsey Ollard - Catching Up',
   'PR - Oh No'
 ];
-
 const MODELS = [
-  { id: 'gt', name: 'Ground Truth' },
-  { id: 'htdemucs', name: 'HTDemucs' },
-  { id: 'openunmix', name: 'Open-Unmix' },
-  { id: 'FLOMSS-S', name: 'FLOMSS-S' },
-  { id: 'FLOMSS-M', name: 'FLOMSS-M' },
-  { id: 'instglow', name: 'InstGlow' },
-  { id: 'sam_audio', name: 'SAM Audio' },
-  { id: 'mge_ldm', name: 'MGE-LDM' },
-  { id: 'FLOMSS-Disc.', name: 'FLOMSS-Disc.' },
-  { id: 'SCNet', name: 'SCNet' }
+  { id: 'gt', name: 'Ground Truth', family: 'Reference' },
+  { id: 'htdemucs', name: 'HTDemucs', family: 'Discriminative' },
+  { id: 'openunmix', name: 'Open-Unmix', family: 'Discriminative' },
+  { id: 'FLOMSS-S', name: 'FLOMSS-S', family: 'Generative', featured: true },
+  { id: 'FLOMSS-M', name: 'FLOMSS-M', family: 'Generative', featured: true },
+  { id: 'instglow', name: 'InstGlow', family: 'Generative' },
+  { id: 'sam_audio', name: 'SAM Audio', family: 'Generative', unavailable: ['other'] },
+  { id: 'mge_ldm', name: 'MGE-LDM', family: 'Generative' },
+  { id: 'FLOMSS-Disc.', name: 'FLOMSS-Disc.', family: 'Discriminative', featured: true },
+  { id: 'SCNet', name: 'SCNet', family: 'Discriminative' }
 ];
-
 const STEMS = ['vocals', 'bass', 'drums', 'other'];
-const STEM_LABELS = { vocals: 'V', bass: 'B', drums: 'D', other: 'O' };
-const STEM_COLORS = {
-  vocals: '#e74c3c',
-  bass: '#8e44ad',
-  drums: '#f39c12',
-  other: '#27ae60',
-  mixture: '#2c3e50',
+const STEM_LABELS = { vocals: 'Vocals', bass: 'Bass', drums: 'Drums', other: 'Other' };
+const STEM_COLORS = { vocals: '#d92d62', bass: '#7f56d9', drums: '#e07912', other: '#079455', mixture: '#344054' };
+const STEM_SOFT = { vocals: '#fff1f5', bass: '#f4f3ff', drums: '#fff7e8', other: '#ecfdf3' };
+
+let currentSong = SONGS[0];
+let globalVolume = 0.8;
+let toastTimer = null;
+const audioElements = {};
+const activeStems = Object.fromEntries(SONGS.map(song => [song, new Set()]));
+const waveformCanvases = new Map();
+const icons = {
+  play: '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5v14l11-7L8 5Z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M7 5h4v14H7V5Zm6 0h4v14h-4V5Z"/></svg>',
+  close: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="m7.05 5.64 4.95 4.95 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05l1.41-1.41Z"/></svg>'
 };
 
-// ============================================================
-// STATE
-// ============================================================
-let globalVolume = 0.8;
-const audioElements = {};
-const waveformBuffers = {}; // key → AudioBuffer (for drawing)
-const activeStems = {};     // song → Set of `model__stem`
-
-// ============================================================
-// HELPERS
-// ============================================================
-function getAudioPath(song, model, stem) {
-  const encodedSong = encodeURIComponent(song);
-  if (model === 'gt' && stem === 'mixture') return `${AUDIO_BASE}/${encodedSong}/gt/mixture.wav`;
-  return `${AUDIO_BASE}/${encodedSong}/${model}/${stem}.wav`;
-}
-
-function getAudioKey(song, model, stem) {
-  return `${song}__${model}__${stem}`;
+function getAudioPath(song, model, stem) { return `${AUDIO_BASE}/${encodeURIComponent(song)}/${model}/${stem}.mp3`; }
+function getAudioKey(song, model, stem) { return `${song}__${model}__${stem}`; }
+function parseStemKey(stemKey) {
+  const separator = stemKey.indexOf('__');
+  return [stemKey.slice(0, separator), stemKey.slice(separator + 2)];
 }
 
 function getOrCreateAudio(song, model, stem) {
   const key = getAudioKey(song, model, stem);
-  if (!audioElements[key]) {
-    const audio = new Audio(getAudioPath(song, model, stem));
-    audio.volume = globalVolume;
-    audio.loop = document.getElementById('loopToggle').checked;
-    audio.preload = 'auto';
-    audioElements[key] = audio;
-  }
-  return audioElements[key];
-}
-
-function stopAll() {
-  Object.values(audioElements).forEach(a => { a.pause(); a.currentTime = 0; });
-  document.querySelectorAll('.play-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
-  document.querySelectorAll('.ctrl-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
-  document.querySelectorAll('.stem-btn.active').forEach(b => b.classList.remove('active'));
-  // Remove dynamic waveform rows
-  document.querySelectorAll('.waveform-row.stem-row').forEach(el => el.remove());
-  Object.keys(activeStems).forEach(k => activeStems[k] = new Set());
-}
-
-function setGlobalVolume(v) {
-  globalVolume = parseFloat(v);
-  Object.values(audioElements).forEach(a => a.volume = globalVolume);
-}
-
-// ============================================================
-// WAVEFORM DRAWING
-// ============================================================
-function drawWaveform(canvas, audioBuffer, color) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-
-  if (!audioBuffer) {
-    ctx.fillStyle = '#eee';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#bbb';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Loading...', w/2, h/2 + 4);
-    return;
-  }
-
-  const data = audioBuffer.getChannelData(0);
-  const step = Math.ceil(data.length / w);
-  ctx.fillStyle = color;
-  ctx.globalAlpha = 0.75;
-
-  for (let i = 0; i < w; i++) {
-    const start = i * step;
-    let min = 1, max = -1;
-    for (let j = 0; j < step; j++) {
-      const val = data[start + j] || 0;
-      if (val < min) min = val;
-      if (val > max) max = val;
-    }
-    const yLow = ((1 + min) / 2) * h;
-    const yHigh = ((1 + max) / 2) * h;
-    ctx.fillRect(i, yHigh, 1, Math.max(1, yLow - yHigh));
-  }
-  ctx.globalAlpha = 1.0;
-}
-
-async function loadAndDrawWaveform(canvas, audioPath, color, song, model, stem) {
-  // Build key to match waveforms.js format: "song/model/stem.wav"
-  const key = `${song}/${model}/${stem}.wav`;
-
-  if (typeof WAVEFORM_DATA !== 'undefined' && WAVEFORM_DATA[key]) {
-    drawWaveformFromPeaks(canvas, WAVEFORM_DATA[key], color);
-  } else {
-    // Fallback: try fetch (works with HTTP server)
-    try {
-      const response = await fetch(audioPath);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      drawWaveform(canvas, audioBuffer, color);
-      canvas.dataset.duration = audioBuffer.duration;
-      waveformBuffers[audioPath] = audioBuffer;
-      await audioCtx.close();
-    } catch (e) {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8f8f8';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#aaa';
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('No waveform data', canvas.width/2, canvas.height/2 + 4);
-    }
-  }
-}
-
-function drawWaveformFromPeaks(canvas, peaks, color) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-
-  ctx.fillStyle = color;
-  ctx.globalAlpha = 0.75;
-
-  for (let i = 0; i < peaks.length && i < w; i++) {
-    const [min, max] = peaks[i];
-    const yHigh = ((1 - max) / 2) * h;
-    const yLow = ((1 - min) / 2) * h;
-    ctx.fillRect(i, yHigh, 1, Math.max(1, yLow - yHigh));
-  }
-  ctx.globalAlpha = 1.0;
-}
-
-// ============================================================
-// PLAYHEAD ANIMATION
-// ============================================================
-function updatePlayheads() {
-  document.querySelectorAll('.waveform-canvas-wrapper[data-key]').forEach(wrapper => {
-    const key = wrapper.dataset.key;
-    const audio = audioElements[key];
-    const playhead = wrapper.querySelector('.waveform-playhead');
-    if (audio && audio.duration && !audio.paused) {
-      const pct = (audio.currentTime / audio.duration) * 100;
-      playhead.style.left = pct + '%';
-    }
-  });
-  requestAnimationFrame(updatePlayheads);
-}
-requestAnimationFrame(updatePlayheads);
-
-// ============================================================
-// SEEK (click anywhere on waveform)
-// ============================================================
-function seekFromClick(e, song, model, stem) {
-  const wrapper = e.currentTarget;
-  const rect = wrapper.getBoundingClientRect();
-  const pct = (e.clientX - rect.left) / rect.width;
-
-  const key = getAudioKey(song, model, stem);
-  const audio = getOrCreateAudio(song, model, stem);
-  if (audio.duration) {
-    audio.currentTime = pct * audio.duration;
-    if (audio.paused) {
-      audio.loop = document.getElementById('loopToggle').checked;
-      audio.volume = globalVolume;
-      audio.play();
-      // Update play button state
-      const btn = document.querySelector(`[data-play-key="${key}"]`);
-      if (btn) { btn.classList.add('playing'); btn.textContent = '⏸'; }
-    }
-  }
-
-  // Sync all active audios for this song
-  if (document.getElementById('syncToggle').checked) {
-    Object.keys(audioElements).forEach(k => {
-      if (k.startsWith(song + '__') && k !== key) {
-        const a = audioElements[k];
-        if (a && a.duration && !a.paused) {
-          a.currentTime = pct * a.duration;
-        }
-      }
-    });
-  }
-}
-
-// ============================================================
-// PLAY / PAUSE / RESTART controls per stem
-// ============================================================
-function playStem(song, model, stem) {
-  const key = getAudioKey(song, model, stem);
-  const audio = getOrCreateAudio(song, model, stem);
-  const syncEnabled = document.getElementById('syncToggle').checked;
-
-  if (audio.paused) {
-    // Sync with mixture or any playing audio
-    if (syncEnabled) {
-      const mixKey = getAudioKey(song, 'gt', 'mixture');
-      const mixAudio = audioElements[mixKey];
-      if (mixAudio && !mixAudio.paused && mixAudio.duration) {
-        audio.currentTime = mixAudio.currentTime;
-      }
-    }
-    audio.loop = document.getElementById('loopToggle').checked;
-    audio.volume = globalVolume;
-    audio.play();
-  } else {
-    audio.pause();
-  }
-  updateCtrlBtnState(key);
-}
-
-function restartStem(song, model, stem) {
-  const key = getAudioKey(song, model, stem);
-  const audio = getOrCreateAudio(song, model, stem);
-  audio.currentTime = 0;
-  audio.loop = document.getElementById('loopToggle').checked;
+  if (audioElements[key]) return audioElements[key];
+  const audio = new Audio(getAudioPath(song, model, stem));
+  audio.preload = 'metadata';
   audio.volume = globalVolume;
-  audio.play();
-  updateCtrlBtnState(key);
+  audio.loop = document.getElementById('loopToggle').checked;
+  audio.dataset.song = song;
+  audio.dataset.model = model;
+  audio.dataset.stem = stem;
+  audio.addEventListener('loadedmetadata', updateTransportUI);
+  audio.addEventListener('play', updatePlaybackButtons);
+  audio.addEventListener('pause', updatePlaybackButtons);
+  audio.addEventListener('ended', updatePlaybackButtons);
+  audio.addEventListener('error', () => showToast(`Audio unavailable: ${model} / ${stem}`));
+  audioElements[key] = audio;
+  return audio;
+}
+function audiosForSong(song) { return Object.values(audioElements).filter(audio => audio.dataset.song === song); }
+function playingAudios(song) { return audiosForSong(song).filter(audio => !audio.paused && !audio.ended); }
+function selectedAudios(song) {
+  const selected = [...activeStems[song]].map(parseStemKey).map(([model, stem]) => getOrCreateAudio(song, model, stem));
+  return selected.length ? selected : [getOrCreateAudio(song, 'gt', 'mixture')];
+}
+function masterAudio(song = currentSong) { return playingAudios(song)[0] || selectedAudios(song)[0] || getOrCreateAudio(song, 'gt', 'mixture'); }
+function currentTime(song = currentSong) {
+  const audio = masterAudio(song);
+  return Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+}
+function setAudioTime(audio, time) {
+  const apply = () => {
+    if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
+    audio.currentTime = Math.min(Math.max(0, time), Math.max(0, audio.duration - .01));
+  };
+  if (audio.readyState >= 1) apply();
+  else audio.addEventListener('loadedmetadata', apply, { once: true });
 }
 
-function stopStem(song, model, stem) {
-  const key = getAudioKey(song, model, stem);
-  const audio = audioElements[key];
-  if (audio) {
-    audio.pause();
-    audio.currentTime = 0;
+async function playSelection(song, time = currentTime(song)) {
+  const targets = selectedAudios(song);
+  const sync = document.getElementById('syncToggle').checked;
+  const targetSet = new Set(targets);
+  audiosForSong(song).forEach(audio => { if (!targetSet.has(audio)) audio.pause(); });
+  for (const audio of targets) {
+    audio.loop = document.getElementById('loopToggle').checked;
+    audio.volume = globalVolume;
+    if (sync) setAudioTime(audio, time);
+    try { await audio.play(); }
+    catch (error) { if (error.name !== 'AbortError') showToast('Playback was blocked. Click play once more.'); }
   }
-  updateCtrlBtnState(key);
-  // Reset playhead
-  const wrapper = document.querySelector(`.waveform-canvas-wrapper[data-key="${key}"]`);
-  if (wrapper) wrapper.querySelector('.waveform-playhead').style.left = '0%';
+  updatePlaybackButtons();
 }
-
-function playAllStems(song) {
-  const loopEnabled = document.getElementById('loopToggle').checked;
-  // Play mixture
-  const mixKey = getAudioKey(song, 'gt', 'mixture');
-  const mixAudio = getOrCreateAudio(song, 'gt', 'mixture');
-  mixAudio.loop = loopEnabled;
-  mixAudio.volume = globalVolume;
-  mixAudio.currentTime = 0;
-  mixAudio.play();
-  const mixBtn = document.querySelector(`[data-play-key="${mixKey}"]`);
-  if (mixBtn) { mixBtn.classList.add('playing'); mixBtn.textContent = '⏸'; }
-
-  // Play all active stems for this song
-  if (activeStems[song]) {
-    activeStems[song].forEach(stemKey => {
-      const [model, stem] = stemKey.split('__');
-      const key = getAudioKey(song, model, stem);
-      const audio = getOrCreateAudio(song, model, stem);
-      audio.loop = loopEnabled;
-      audio.volume = globalVolume;
-      audio.currentTime = 0;
-      audio.play();
-      updateCtrlBtnState(key);
-    });
-  }
+function pauseSong(song = currentSong) { audiosForSong(song).forEach(audio => audio.pause()); updatePlaybackButtons(); }
+function stopSong(song = currentSong) {
+  audiosForSong(song).forEach(audio => { audio.pause(); setAudioTime(audio, 0); });
+  updatePlaybackButtons();
+  updatePlayheads(0);
 }
-
-function stopAllStems(song) {
-  // Stop mixture
-  const mixKey = getAudioKey(song, 'gt', 'mixture');
-  const mixAudio = audioElements[mixKey];
-  if (mixAudio) { mixAudio.pause(); mixAudio.currentTime = 0; }
-  const mixBtn = document.querySelector(`[data-play-key="${mixKey}"]`);
-  if (mixBtn) { mixBtn.classList.remove('playing'); mixBtn.textContent = '▶'; }
-  const mixWrapper = document.querySelector(`.waveform-canvas-wrapper[data-key="${mixKey}"]`);
-  if (mixWrapper) mixWrapper.querySelector('.waveform-playhead').style.left = '0%';
-
-  // Stop all active stems
-  if (activeStems[song]) {
-    activeStems[song].forEach(stemKey => {
-      const [model, stem] = stemKey.split('__');
-      const key = getAudioKey(song, model, stem);
-      const audio = audioElements[key];
-      if (audio) { audio.pause(); audio.currentTime = 0; }
-      updateCtrlBtnState(key);
-      const wrapper = document.querySelector(`.waveform-canvas-wrapper[data-key="${key}"]`);
-      if (wrapper) wrapper.querySelector('.waveform-playhead').style.left = '0%';
-    });
-  }
+function stopAll() { Object.values(audioElements).forEach(audio => { audio.pause(); setAudioTime(audio, 0); }); updatePlaybackButtons(); }
+function toggleTransport() { if (playingAudios(currentSong).length) pauseSong(); else playSelection(currentSong); }
+function restartTransport() { playSelection(currentSong, 0); }
+function seekBy(seconds) {
+  const target = Math.max(0, currentTime() + seconds);
+  const wasPlaying = playingAudios(currentSong).length > 0;
+  audiosForSong(currentSong).forEach(audio => setAudioTime(audio, target));
+  if (wasPlaying) playSelection(currentSong, target);
+  updateTransportUI();
 }
-
-function updateCtrlBtnState(key) {
-  const audio = audioElements[key];
-  const btn = document.querySelector(`[data-play-key="${key}"]`);
-  if (btn) {
-    if (audio && !audio.paused) {
-      btn.classList.add('playing');
-      btn.textContent = '⏸';
-    } else {
-      btn.classList.remove('playing');
-      btn.textContent = '▶';
-    }
-  }
+function playReference() {
+  const time = currentTime();
+  const mix = getOrCreateAudio(currentSong, 'gt', 'mixture');
+  audiosForSong(currentSong).forEach(audio => audio.pause());
+  setAudioTime(mix, time);
+  mix.loop = document.getElementById('loopToggle').checked;
+  mix.volume = globalVolume;
+  mix.play().catch(() => showToast('Click once more to start playback.'));
+  updatePlaybackButtons();
 }
+function setGlobalVolume(value) {
+  globalVolume = Number(value);
+  Object.values(audioElements).forEach(audio => { audio.volume = globalVolume; });
+  document.getElementById('volumeValue').textContent = `${Math.round(globalVolume * 100)}%`;
+}
+function setLoop(value) { Object.values(audioElements).forEach(audio => { audio.loop = value; }); }
 
-// ============================================================
-// TOGGLE STEM (add/remove from display)
-// ============================================================
-function toggleStem(song, model, stem, btn) {
+function toggleStem(model, stem) {
   const stemKey = `${model}__${stem}`;
-  if (!activeStems[song]) activeStems[song] = new Set();
-
-  if (activeStems[song].has(stemKey)) {
-    // Remove
-    activeStems[song].delete(stemKey);
-    btn.classList.remove('active');
-    const audio = audioElements[getAudioKey(song, model, stem)];
+  const selected = activeStems[currentSong];
+  const time = currentTime();
+  const isActive = selected.has(stemKey);
+  if (isActive) {
+    selected.delete(stemKey);
+    const audio = audioElements[getAudioKey(currentSong, model, stem)];
     if (audio) audio.pause();
-    removeStemWaveform(song, model, stem);
   } else {
-    // Add
-    activeStems[song].add(stemKey);
-    btn.classList.add('active');
-    addStemWaveform(song, model, stem);
-    // Auto-play with sync
-    playStem(song, model, stem);
+    if (document.getElementById('soloToggle').checked) {
+      [...selected].forEach(key => {
+        const [oldModel, oldStem] = parseStemKey(key);
+        const audio = audioElements[getAudioKey(currentSong, oldModel, oldStem)];
+        if (audio) audio.pause();
+      });
+      selected.clear();
+    }
+    selected.add(stemKey);
+  }
+  renderSelections();
+  renderModelStates();
+  if (!isActive || selected.size) playSelection(currentSong, time);
+  else pauseSong(currentSong);
+}
+function removeSelection(model, stem) {
+  const audio = audioElements[getAudioKey(currentSong, model, stem)];
+  if (audio) audio.pause();
+  activeStems[currentSong].delete(`${model}__${stem}`);
+  renderSelections();
+  renderModelStates();
+}
+function stemStyle(stem) { return `--stem-color:${STEM_COLORS[stem]};--stem-soft:${STEM_SOFT[stem]}`; }
+
+function prepareCanvas(canvas) {
+  const width = Math.max(600, Math.round((canvas.parentElement.clientWidth || 900) * Math.min(window.devicePixelRatio || 1, 2)));
+  const height = 104;
+  canvas.width = width;
+  canvas.height = height;
+  return { width, height };
+}
+function drawWaveformFromPeaks(canvas, peaks, color) {
+  const { width, height } = prepareCanvas(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, width, height);
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, `${color}99`);
+  ctx.fillStyle = gradient;
+  for (let x = 0; x < width; x++) {
+    const index = Math.min(peaks.length - 1, Math.floor(x / width * peaks.length));
+    const [min, max] = peaks[index];
+    const top = (1 - max) * height / 2;
+    const bottom = (1 - min) * height / 2;
+    ctx.fillRect(x, top, 1, Math.max(1, bottom - top));
   }
 }
+function drawLoading(canvas, message = 'Loading waveform…') {
+  const { width, height } = prepareCanvas(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#edf1f6';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#98a2b3';
+  ctx.font = '22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(message, width / 2, height / 2 + 7);
+}
+async function loadAndDrawWaveform(canvas, song, model, stem) {
+  const mp3Key = `${song}/${model}/${stem}.mp3`;
+  const legacyWavKey = `${song}/${model}/${stem}.wav`;
+  const peaks = typeof WAVEFORM_DATA !== 'undefined' && (WAVEFORM_DATA[mp3Key] || WAVEFORM_DATA[legacyWavKey]);
+  waveformCanvases.set(canvas, { song, model, stem, peaks });
+  if (peaks) { drawWaveformFromPeaks(canvas, peaks, STEM_COLORS[stem] || STEM_COLORS.mixture); return; }
+  drawLoading(canvas);
+  try {
+    const response = await fetch(getAudioPath(song, model, stem));
+    if (!response.ok) throw new Error(String(response.status));
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const buffer = await context.decodeAudioData(await response.arrayBuffer());
+    const data = buffer.getChannelData(0);
+    const generated = [];
+    for (let i = 0; i < 800; i++) {
+      const start = Math.floor(i * data.length / 800);
+      const end = Math.floor((i + 1) * data.length / 800);
+      let min = 1, max = -1;
+      for (let j = start; j < end; j++) { min = Math.min(min, data[j]); max = Math.max(max, data[j]); }
+      generated.push([min, max]);
+    }
+    waveformCanvases.get(canvas).peaks = generated;
+    drawWaveformFromPeaks(canvas, generated, STEM_COLORS[stem] || STEM_COLORS.mixture);
+    await context.close();
+  } catch (error) { drawLoading(canvas, 'Waveform unavailable'); }
+}
 
-// ============================================================
-// DYNAMIC WAVEFORM ROWS
-// ============================================================
-function addStemWaveform(song, model, stem) {
-  const container = document.querySelector(`.waveform-area[data-song="${song}"]`);
-  if (!container) return;
-
-  const rowId = `wr_${song}_${model}_${stem}`.replace(/[^a-zA-Z0-9_]/g, '_');
-  if (document.getElementById(rowId)) return;
-
-  const key = getAudioKey(song, model, stem);
-  const modelObj = MODELS.find(m => m.id === model);
-  const displayName = modelObj ? modelObj.name : model;
-  const color = STEM_COLORS[stem] || '#666';
-
+function createWaveformRow(model, stem, isReference = false) {
+  const modelInfo = MODELS.find(item => item.id === model) || { name: model };
   const row = document.createElement('div');
-  row.className = 'waveform-row stem-row';
-  row.id = rowId;
-
-  // Label
-  const label = document.createElement('div');
-  label.className = 'waveform-label';
-  label.style.color = color;
-  label.innerHTML = `<span style="font-size:0.65rem">${displayName}</span><br>${stem}`;
-
-  // Waveform
+  row.className = 'waveform-row';
+  row.style.setProperty('--stem-color', STEM_COLORS[stem] || STEM_COLORS.mixture);
+  const identity = document.createElement('div');
+  identity.className = 'waveform-identity';
+  identity.innerHTML = `<div class="waveform-name">${isReference ? 'Original mixture' : modelInfo.name}</div><div class="waveform-detail"><span class="stem-dot"></span>${isReference ? 'Reference' : STEM_LABELS[stem]}</div>`;
   const wrapper = document.createElement('div');
   wrapper.className = 'waveform-canvas-wrapper';
-  wrapper.dataset.key = key;
-  wrapper.dataset.song = song;
-  wrapper.dataset.model = model;
-  wrapper.dataset.stem = stem;
-
+  wrapper.dataset.key = getAudioKey(currentSong, model, stem);
   const canvas = document.createElement('canvas');
-  canvas.width = 800;
-  canvas.height = 50;
   const playhead = document.createElement('div');
   playhead.className = 'waveform-playhead';
-
-  wrapper.appendChild(canvas);
-  wrapper.appendChild(playhead);
-  wrapper.addEventListener('click', (e) => seekFromClick(e, song, model, stem));
-
-  // Controls: play/pause, restart
-  const controls = document.createElement('div');
-  controls.className = 'stem-controls';
-
-  const playBtn = document.createElement('button');
-  playBtn.className = 'ctrl-btn';
-  playBtn.dataset.playKey = key;
-  playBtn.textContent = '▶';
-  playBtn.title = 'Play / Pause';
-  playBtn.onclick = (e) => { e.stopPropagation(); playStem(song, model, stem); };
-
-  const restartBtn = document.createElement('button');
-  restartBtn.className = 'ctrl-btn';
-  restartBtn.textContent = '⏮';
-  restartBtn.title = 'Restart from beginning';
-  restartBtn.onclick = (e) => { e.stopPropagation(); restartStem(song, model, stem); };
-
-  const stopBtn = document.createElement('button');
-  stopBtn.className = 'ctrl-btn';
-  stopBtn.textContent = '⏹';
-  stopBtn.title = 'Stop';
-  stopBtn.onclick = (e) => { e.stopPropagation(); stopStem(song, model, stem); };
-
-  controls.appendChild(playBtn);
-  controls.appendChild(restartBtn);
-  controls.appendChild(stopBtn);
-
-  row.appendChild(label);
-  row.appendChild(wrapper);
-  row.appendChild(controls);
-  container.appendChild(row);
-
-  loadAndDrawWaveform(canvas, getAudioPath(song, model, stem), color, song, model, stem);
-}
-
-function removeStemWaveform(song, model, stem) {
-  const rowId = `wr_${song}_${model}_${stem}`.replace(/[^a-zA-Z0-9_]/g, '_');
-  const el = document.getElementById(rowId);
-  if (el) el.remove();
-}
-
-// ============================================================
-// PLAY MIXTURE
-// ============================================================
-function playMixture(song, btn) {
-  const key = getAudioKey(song, 'gt', 'mixture');
-  const audio = getOrCreateAudio(song, 'gt', 'mixture');
-  if (audio.paused) {
-    audio.loop = document.getElementById('loopToggle').checked;
-    audio.volume = globalVolume;
-    audio.play();
-    btn.classList.add('playing');
-    btn.textContent = '⏸';
-  } else {
-    audio.pause();
-    btn.classList.remove('playing');
-    btn.textContent = '▶';
+  wrapper.append(canvas, playhead);
+  wrapper.addEventListener('click', event => {
+    const rect = wrapper.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const reference = getOrCreateAudio(currentSong, 'gt', 'mixture');
+    const duration = Number.isFinite(reference.duration) ? reference.duration : masterAudio().duration;
+    if (!Number.isFinite(duration)) return;
+    const target = ratio * duration;
+    const wasPlaying = playingAudios(currentSong).length > 0;
+    audiosForSong(currentSong).forEach(audio => setAudioTime(audio, target));
+    if (wasPlaying) playSelection(currentSong, target);
+    updateTransportUI();
+  });
+  const actions = document.createElement('div');
+  actions.className = 'row-actions';
+  const play = document.createElement('button');
+  play.className = 'mini-button';
+  play.dataset.playKey = getAudioKey(currentSong, model, stem);
+  play.innerHTML = icons.play;
+  play.title = isReference ? 'Audition original mixture' : 'Play / pause';
+  play.setAttribute('aria-label', play.title);
+  play.addEventListener('click', () => {
+    const audio = getOrCreateAudio(currentSong, model, stem);
+    if (!audio.paused) pauseSong(currentSong);
+    else if (isReference) playReference();
+    else playSelection(currentSong, currentTime());
+  });
+  actions.appendChild(play);
+  if (!isReference) {
+    const remove = document.createElement('button');
+    remove.className = 'mini-button remove';
+    remove.innerHTML = icons.close;
+    remove.title = 'Remove from comparison';
+    remove.setAttribute('aria-label', remove.title);
+    remove.addEventListener('click', () => removeSelection(model, stem));
+    actions.appendChild(remove);
   }
+  row.append(identity, wrapper, actions);
+  requestAnimationFrame(() => loadAndDrawWaveform(canvas, currentSong, model, stem));
+  return row;
 }
 
-// ============================================================
-// BUILD UI
-// ============================================================
-function buildPage() {
-  const container = document.getElementById('songContainer');
-
-  SONGS.forEach((song, idx) => {
-    const section = document.createElement('div');
-    section.className = 'song-section' + (idx === 0 ? ' open' : '');
-
-    const header = document.createElement('div');
-    header.className = 'song-header';
-    header.innerHTML = `<span class="arrow">▶</span> ${song}`;
-    header.onclick = () => section.classList.toggle('open');
-
-    const body = document.createElement('div');
-    body.className = 'song-body';
-
-    // Waveform area
-    const waveArea = document.createElement('div');
-    waveArea.className = 'waveform-area';
-    waveArea.dataset.song = song;
-
-    // Mixture row
-    const mixKey = getAudioKey(song, 'gt', 'mixture');
-    const mixRow = document.createElement('div');
-    mixRow.className = 'waveform-row';
-    mixRow.innerHTML = `
-      <div class="waveform-label" style="color:${STEM_COLORS.mixture}">MIXTURE</div>
-      <div class="waveform-canvas-wrapper" data-key="${mixKey}" data-song="${song}" data-model="gt" data-stem="mixture">
-        <canvas width="800" height="50"></canvas>
-        <div class="waveform-playhead"></div>
-      </div>
-      <div class="stem-controls">
-        <button class="ctrl-btn" data-play-key="${mixKey}" onclick="playMixture('${song.replace(/'/g, "\\'")}', this)" title="Play / Pause">▶</button>
-        <button class="ctrl-btn" onclick="restartStem('${song.replace(/'/g, "\\'")}', 'gt', 'mixture')" title="Restart">⏮</button>
-        <button class="ctrl-btn" onclick="stopStem('${song.replace(/'/g, "\\'")}', 'gt', 'mixture')" title="Stop">⏹</button>
-      </div>
-    `;
-    waveArea.appendChild(mixRow);
-
-    const mixWrapper = mixRow.querySelector('.waveform-canvas-wrapper');
-    mixWrapper.addEventListener('click', (e) => seekFromClick(e, song, 'gt', 'mixture'));
-    const mixCanvas = mixRow.querySelector('canvas');
-    loadAndDrawWaveform(mixCanvas, getAudioPath(song, 'gt', 'mixture'), STEM_COLORS.mixture, song, 'gt', 'mixture');
-
-    // Play All / Stop All controls for this song
-    const songControls = document.createElement('div');
-    songControls.style.cssText = 'margin: 0.5rem 0 0.75rem 0; display:flex; gap:0.5rem;';
-    const playAllBtn = document.createElement('button');
-    playAllBtn.className = 'ctrl-btn';
-    playAllBtn.style.cssText = 'width:auto; padding:0.25rem 0.6rem; font-size:0.75rem; border-radius:4px;';
-    playAllBtn.textContent = '▶ Play All';
-    playAllBtn.title = 'Play mixture + all active stems from beginning';
-    playAllBtn.onclick = () => playAllStems(song);
-    const stopAllBtn = document.createElement('button');
-    stopAllBtn.className = 'ctrl-btn';
-    stopAllBtn.style.cssText = 'width:auto; padding:0.25rem 0.6rem; font-size:0.75rem; border-radius:4px;';
-    stopAllBtn.textContent = '⏹ Stop All';
-    stopAllBtn.title = 'Stop all audio for this song';
-    stopAllBtn.onclick = () => stopAllStems(song);
-    songControls.appendChild(playAllBtn);
-    songControls.appendChild(stopAllBtn);
-    body.appendChild(waveArea);
-    body.appendChild(songControls);
-
-    // Model table
-    const table = document.createElement('table');
-    table.className = 'model-table';
-    table.innerHTML = `<thead><tr><th>Model</th><th>Toggle Stems (click to add/remove)</th></tr></thead>`;
-    const tbody = document.createElement('tbody');
-
-    MODELS.forEach(model => {
-      const tr = document.createElement('tr');
-      const tdName = document.createElement('td');
-      tdName.className = 'model-name';
-      tdName.textContent = model.name;
-
-      const tdStems = document.createElement('td');
-      STEMS.forEach(stem => {
-        const btn = document.createElement('button');
-        btn.className = 'stem-btn';
-        btn.dataset.stem = stem;
-        btn.textContent = STEM_LABELS[stem];
-        btn.title = `${model.name} — ${stem}`;
-        btn.onclick = () => toggleStem(song, model.id, stem, btn);
-        tdStems.appendChild(btn);
-      });
-
-      tr.appendChild(tdName);
-      tr.appendChild(tdStems);
-      tbody.appendChild(tr);
+function renderSelections() {
+  const stack = document.getElementById('waveformStack');
+  if (!stack) return;
+  stack.innerHTML = '';
+  stack.appendChild(createWaveformRow('gt', 'mixture', true));
+  const selected = [...activeStems[currentSong]];
+  if (!selected.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-selection';
+    empty.textContent = 'Select a stem below to begin a synchronized A/B comparison.';
+    stack.appendChild(empty);
+  } else {
+    selected.forEach(key => {
+      const [model, stem] = parseStemKey(key);
+      stack.appendChild(createWaveformRow(model, stem));
     });
+  }
+  const counter = document.getElementById('selectedCounter');
+  if (counter) counter.textContent = selected.length ? `${selected.length} comparison signal${selected.length > 1 ? 's' : ''}` : 'Reference only';
+  updatePlaybackButtons();
+}
+function renderModelStates() {
+  document.querySelectorAll('.stem-button').forEach(button => {
+    const active = activeStems[currentSong].has(`${button.dataset.model}__${button.dataset.stem}`);
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  document.querySelectorAll('.model-table tbody tr').forEach(row => row.classList.toggle('active-row', row.querySelector('.stem-button.active') !== null));
+}
+function familyClass(family) { return family.toLowerCase().replace(/[^a-z]+/g, '-'); }
 
-    table.appendChild(tbody);
-    body.appendChild(table);
+function buildWorkspace() {
+  waveformCanvases.clear();
+  const container = document.getElementById('songContainer');
+  container.innerHTML = '';
+  const workspace = document.createElement('section');
+  workspace.className = 'workspace';
+  workspace.innerHTML = `
+    <header class="workspace-header">
+      <div><div class="workspace-kicker">Now comparing</div><h3 class="workspace-title"></h3><div class="workspace-meta">MUSDB18-HQ test set · six curated excerpts</div></div>
+      <div class="selected-counter" id="selectedCounter">Reference only</div>
+    </header>
+    <section class="audition-panel">
+      <div class="panel-topline"><span class="panel-label">Synchronized waveforms</span><span class="panel-hint">Click any waveform to seek</span></div>
+      <div class="waveform-stack" id="waveformStack"></div>
+    </section>
+    <section class="comparison-panel">
+      <div class="comparison-toolbar">
+        <div><h3>Systems and sources</h3><p>A/B switch replaces the active signal; disable it to layer multiple stems.</p></div>
+        <div class="stem-legend">${STEMS.map(stem => `<span class="legend-item"><span class="stem-dot" style="--stem-color:${STEM_COLORS[stem]}"></span>${STEM_LABELS[stem]}</span>`).join('')}</div>
+      </div>
+      <table class="model-table">
+        <thead><tr><th>System</th><th>Family</th>${STEMS.map(stem => `<th>${STEM_LABELS[stem]}</th>`).join('')}</tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    <div class="keyboard-help"><span><kbd>Space</kbd> play / pause</span><span><kbd>←</kbd><kbd>→</kbd> seek 5 s</span><span><kbd>R</kbd> reference</span><span><kbd>Esc</kbd> stop</span></div>`;
+  workspace.querySelector('.workspace-title').textContent = currentSong;
+  const tbody = workspace.querySelector('tbody');
+  MODELS.forEach(model => {
+    const row = document.createElement('tr');
+    if (model.featured) row.classList.add('featured');
+    const nameCell = document.createElement('td');
+    nameCell.innerHTML = `<div class="model-name"><span>${model.name}</span>${model.featured ? '<span class="ours-badge">FLOMSS</span>' : ''}</div>`;
+    const familyCell = document.createElement('td');
+    familyCell.innerHTML = `<span class="family-tag ${familyClass(model.family)}">${model.family}</span>`;
+    row.append(nameCell, familyCell);
+    STEMS.forEach(stem => {
+      const cell = document.createElement('td');
+      const button = document.createElement('button');
+      button.className = 'stem-button';
+      button.style.cssText = stemStyle(stem);
+      button.dataset.model = model.id;
+      button.dataset.stem = stem;
+      button.textContent = STEM_LABELS[stem];
+      const unavailable = model.unavailable && model.unavailable.includes(stem);
+      button.disabled = unavailable;
+      button.title = unavailable ? 'Audio not available for this system' : `Compare ${model.name} — ${STEM_LABELS[stem]}`;
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', () => toggleStem(model.id, stem));
+      cell.appendChild(button);
+      row.appendChild(cell);
+    });
+    tbody.appendChild(row);
+  });
+  container.appendChild(workspace);
+  getOrCreateAudio(currentSong, 'gt', 'mixture');
+  renderSelections();
+  renderModelStates();
+  updateTransportUI();
+}
 
-    section.appendChild(header);
-    section.appendChild(body);
-    container.appendChild(section);
+function changeTrack(index) {
+  const nextIndex = (index + SONGS.length) % SONGS.length;
+  stopAll();
+  currentSong = SONGS[nextIndex];
+  document.getElementById('trackSelect').value = currentSong;
+  buildWorkspace();
+}
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
+  const minutes = Math.floor(seconds / 60);
+  const remaining = Math.floor(seconds % 60);
+  return `${String(minutes).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
+}
+function updatePlaybackButtons() {
+  const isPlaying = playingAudios(currentSong).length > 0;
+  const main = document.getElementById('playButton');
+  if (main) {
+    main.innerHTML = isPlaying ? icons.pause : icons.play;
+    main.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+  }
+  document.querySelectorAll('.mini-button[data-play-key]').forEach(button => {
+    const audio = audioElements[button.dataset.playKey];
+    const playing = audio && !audio.paused && !audio.ended;
+    button.classList.toggle('playing', Boolean(playing));
+    button.innerHTML = playing ? icons.pause : icons.play;
   });
 }
+function updatePlayheads(explicitTime = null) {
+  const audio = masterAudio();
+  const time = explicitTime === null ? currentTime() : explicitTime;
+  const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+  const percentage = duration > 0 ? Math.min(100, time / duration * 100) : 0;
+  document.querySelectorAll('.waveform-playhead').forEach(playhead => { playhead.style.left = `${percentage}%`; });
+}
+function updateTransportUI() {
+  const audio = masterAudio();
+  document.getElementById('timecode').textContent = `${formatTime(currentTime())} / ${formatTime(audio.duration)}`;
+  updatePlayheads();
+}
+function animationLoop() { updateTransportUI(); requestAnimationFrame(animationLoop); }
+function showToast(message) {
+  const toast = document.getElementById('statusToast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
 
-buildPage();
+function initialize() {
+  const select = document.getElementById('trackSelect');
+  SONGS.forEach(song => {
+    const option = document.createElement('option');
+    option.value = song;
+    option.textContent = song;
+    select.appendChild(option);
+  });
+  select.value = currentSong;
+  select.addEventListener('change', () => changeTrack(SONGS.indexOf(select.value)));
+  document.getElementById('previousTrack').addEventListener('click', () => changeTrack(SONGS.indexOf(currentSong) - 1));
+  document.getElementById('nextTrack').addEventListener('click', () => changeTrack(SONGS.indexOf(currentSong) + 1));
+  document.getElementById('playButton').addEventListener('click', toggleTransport);
+  document.getElementById('restartButton').addEventListener('click', restartTransport);
+  document.getElementById('stopButton').addEventListener('click', () => stopSong());
+  document.getElementById('globalVolume').addEventListener('input', event => setGlobalVolume(event.target.value));
+  document.getElementById('loopToggle').addEventListener('change', event => setLoop(event.target.checked));
+  document.getElementById('soloToggle').addEventListener('change', event => showToast(event.target.checked ? 'A/B switch enabled: one comparison signal at a time.' : 'Layer mode enabled: multiple signals can play together.'));
+  document.addEventListener('keydown', event => {
+    const editing = ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(document.activeElement.tagName);
+    if (editing) return;
+    if (event.code === 'Space') { event.preventDefault(); toggleTransport(); }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); seekBy(-5); }
+    else if (event.key === 'ArrowRight') { event.preventDefault(); seekBy(5); }
+    else if (event.key.toLowerCase() === 'r') { event.preventDefault(); playReference(); }
+    else if (event.key === 'Escape') { event.preventDefault(); stopSong(); }
+  });
+  window.addEventListener('resize', () => {
+    clearTimeout(window.__waveformResizeTimer);
+    window.__waveformResizeTimer = setTimeout(() => {
+      waveformCanvases.forEach((data, canvas) => {
+        if (data.peaks && canvas.isConnected) drawWaveformFromPeaks(canvas, data.peaks, STEM_COLORS[data.stem] || STEM_COLORS.mixture);
+      });
+    }, 120);
+  });
+  buildWorkspace();
+  requestAnimationFrame(animationLoop);
+}
+initialize();
 </script>
 </body>
 </html>
