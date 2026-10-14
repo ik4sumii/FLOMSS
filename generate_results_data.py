@@ -48,16 +48,6 @@ METRICS = (
     "FD-OpenL3",
     "FD-LAION-CLAP",
     "FD-MERT",
-    "MMD-VGGish",
-    "MMD-PASST",
-    "MMD-OpenL3",
-    "MMD-LAION-CLAP",
-    "MMD-MERT",
-    "LPAPS-VGGish",
-    "LPAPS-PASST",
-    "LPAPS-OpenL3",
-    "LPAPS-LAION-CLAP",
-    "LPAPS-MERT",
 )
 
 

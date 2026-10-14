@@ -418,8 +418,6 @@ kbd { padding: 2px 6px; color: var(--ink-soft); background: #fff; border: 1px so
 .metric-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb,var(--metric-accent) 28%,var(--results-line)); box-shadow: 0 13px 30px rgba(31,41,55,.09); }
 .metric-card--signal { --metric-accent: #2563eb; }
 .metric-card--fd { --metric-accent: #7c3aed; }
-.metric-card--mmd { --metric-accent: #0f766e; }
-.metric-card--lpaps { --metric-accent: #d97706; }
 .metric-card__header { display: flex; align-items: center; justify-content: space-between; min-height: 47px; padding: 10px 13px; background: linear-gradient(90deg,color-mix(in srgb,var(--metric-accent) 10%,white),#fff); border-top: 3px solid var(--metric-accent); border-bottom: 1px solid #e9edf3; }
 .metric-card__title { margin: 0; color: #25314a; font-size: 13px; font-weight: 800; letter-spacing: .02em; }
 .metric-card__hint { color: var(--results-muted); font-size: 10px; }
@@ -500,13 +498,12 @@ for generative MSS.</p>
       <header class="subjective-results__header">
         <div>
           <h2 class="results-title">Comprehensive evaluation</h2>
-          <p class="results-intro">Listening-test results first, followed by signal- and embedding-based objective measurements on MUSDB18-HQ.</p>
         </div>
       </header>
       <header class="subjective-results__header">
         <div>
-          <h3 id="subjective-results-title">Subjective source-separation quality</h3>
-          <p class="subjective-results__subtitle">Mean MUSHRA score with 95% confidence interval</p>
+          <h3 id="subjective-results-title">Subjective Quality</h3>
+          <p class="subjective-results__subtitle">Mean subjective score with 95% confidence interval</p>
         </div>
         <div class="subjective-results__legend" aria-label="Table legend">
           <span><i class="legend-dot best"></i>Best</span>
@@ -533,16 +530,14 @@ for generative MSS.</p>
         </table>
       </div>
       <p class="subjective-results__note">
-        Values are mean <span aria-hidden="true">±</span> 95% CI half-width. Hover a score for the exact interval.
-        Overall ranks exclude reference conditions and methods without results for all four sources.
+        Mean subjective scores are reported across individual sources. Overall ranks exclude reference conditions and systems without results for all four sources.
       </p>
     </section>
 
     <section class="objective-results results-section" aria-labelledby="objective-results-title">
       <header class="objective-results__header">
         <div>
-          <h3 id="objective-results-title">Objective evaluation</h3>
-          <p>Signal fidelity and perceptual distribution distances, grouped for rapid cross-system comparison.</p>
+          <h3 id="objective-results-title">Objective Metrics</h3>
         </div>
         <div class="ranking-key" aria-label="Objective table ranking legend">
           <span><i class="best"></i>Best</span>
@@ -554,7 +549,6 @@ for generative MSS.</p>
         <header class="result-block__header">
           <div>
             <h4 id="average-results-title">Average across sources</h4>
-            <p>Macro-average over vocals, bass, drums, and other.</p>
           </div>
         </header>
         <div class="metric-card-grid" id="objectiveAverage"></div>
@@ -564,7 +558,6 @@ for generative MSS.</p>
         <header class="result-block__header">
           <div>
             <h4 id="source-results-title">Per-source results</h4>
-            <p>Select a stem to inspect the same metric families without changing page position.</p>
           </div>
           <div class="source-tabs" role="tablist" aria-label="Select source">
             <button class="source-tab" type="button" role="tab" data-source="vocals" aria-selected="true">Vocals</button>
@@ -577,7 +570,7 @@ for generative MSS.</p>
       </section>
 
       <p class="objective-results__note">
-        ↑ higher is better; ↓ lower is better. SDR, SIR, and SAR are reported in dB. FD, MMD, and LPAPS are evaluated independently in each embedding space.
+        ↑ higher is better; ↓ lower is better. SDR, SIR, and SAR are reported in dB. FD is evaluated independently in each embedding space.
       </p>
     </section>
   </div>
@@ -587,7 +580,6 @@ for generative MSS.</p>
       <h2>Interactive listening comparison</h2>
       <p>Choose a source, then switch systems at the same timestamp for a time-aligned A/B workflow.</p>
     </div>
-    <div class="mode-note"><i></i> 48 kHz · stereo · synchronized transport</div>
   </div>
 
   <section class="control-dock" aria-label="Playback controls">
@@ -685,20 +677,6 @@ const OBJECTIVE_METRIC_GROUPS = [
     { key: 'FD-OpenL3', label: 'OpenL3', direction: 'lower' },
     { key: 'FD-LAION-CLAP', label: 'CLAP', direction: 'lower' },
     { key: 'FD-MERT', label: 'MERT', direction: 'lower' }
-  ]},
-  { id: 'mmd', title: 'Maximum Mean Discrepancy (MMD)', hint: 'Lower is better', metrics: [
-    { key: 'MMD-VGGish', label: 'VGGish', direction: 'lower' },
-    { key: 'MMD-PASST', label: 'PaSST', direction: 'lower' },
-    { key: 'MMD-OpenL3', label: 'OpenL3', direction: 'lower' },
-    { key: 'MMD-LAION-CLAP', label: 'CLAP', direction: 'lower' },
-    { key: 'MMD-MERT', label: 'MERT', direction: 'lower' }
-  ]},
-  { id: 'lpaps', title: 'LPAPS', hint: 'Lower is better', metrics: [
-    { key: 'LPAPS-VGGish', label: 'VGGish', direction: 'lower' },
-    { key: 'LPAPS-PASST', label: 'PaSST', direction: 'lower' },
-    { key: 'LPAPS-OpenL3', label: 'OpenL3', direction: 'lower' },
-    { key: 'LPAPS-LAION-CLAP', label: 'CLAP', direction: 'lower' },
-    { key: 'LPAPS-MERT', label: 'MERT', direction: 'lower' }
   ]}
 ];
 
