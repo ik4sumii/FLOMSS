@@ -291,8 +291,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
 .model-table tbody tr.active-row td { background: #f7f8ff; }
 .model-table tbody tr.featured td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
 .model-table td:not(:first-child):not(:nth-child(2)) { text-align: center; }
-.model-name { display: flex; align-items: center; gap: 8px; font-weight: 750; }
+.model-name { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-weight: 750; }
 .ours-badge { padding: 2px 6px; color: var(--brand-dark); background: var(--brand-soft); border-radius: 5px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.model-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 2px 7px; border: 1px solid transparent; border-radius: 999px; font-size: 9px; font-weight: 850; letter-spacing: .035em; line-height: 1; text-transform: uppercase; }
+.model-badge.baseline { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+.model-badge.sota { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
 .family-tag { display: inline-flex; padding: 3px 7px; color: var(--muted); background: #f2f4f7; border-radius: 999px; font-size: 9px; font-weight: 750; }
 .family-tag.reference { color: #175cd3; background: #eff8ff; }
 .family-tag.generative { color: #6941c6; background: #f4f3ff; }
@@ -627,8 +630,8 @@ const MODELS = [
   { id: 'instglow', name: 'InstGlow', family: 'Generative' },
   { id: 'sam_audio', name: 'SAM Audio', family: 'Generative', unavailable: ['other'] },
   { id: 'mge_ldm', name: 'MGE-LDM', family: 'Generative' },
-  { id: 'FLOMSS-Disc.', name: 'FLOMSS-Disc.', family: 'Discriminative', featured: true },
-  { id: 'SCNet', name: 'SCNet', family: 'Discriminative' }
+  { id: 'FLOMSS-Disc.', name: 'FLOMSS-Disc.', family: 'Discriminative', featured: true, marker: 'Baseline', markerClass: 'baseline' },
+  { id: 'SCNet', name: 'SCNet', family: 'Discriminative', marker: 'SOTA', markerClass: 'sota' }
 ];
 const STEMS = ['vocals', 'bass', 'drums', 'other'];
 const STEM_LABELS = { vocals: 'Vocals', bass: 'Bass', drums: 'Drums', other: 'Other' };
@@ -1074,7 +1077,8 @@ function buildWorkspace() {
     const row = document.createElement('tr');
     if (model.featured) row.classList.add('featured');
     const nameCell = document.createElement('td');
-    nameCell.innerHTML = `<div class="model-name"><span>${model.name}</span>${model.featured ? '<span class="ours-badge">FLOMSS</span>' : ''}</div>`;
+    const marker = model.marker ? `<span class="model-badge ${model.markerClass}">${model.marker}</span>` : '';
+    nameCell.innerHTML = `<div class="model-name"><span>${model.name}</span>${model.featured ? '<span class="ours-badge">FLOMSS</span>' : ''}${marker}</div>`;
     const familyCell = document.createElement('td');
     familyCell.innerHTML = `<span class="family-tag ${familyClass(model.family)}">${model.family}</span>`;
     row.append(nameCell, familyCell);
